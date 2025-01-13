@@ -41,5 +41,33 @@ CHIP ALU {
         ng;      // if (out < 0)  equals 1, else 0
 
     PARTS:
-    //// Replace this comment with your code.
+    // if (zx == 1) sets x = 0        // 16-bit constant
+    // if (zy == 1) sets y = 0        // 16-bit constant
+    Mux16(a=x, b=false, sel=zx, out= x1);
+    Mux16(a=y, b=false, sel=zy, out= y1);
+
+    // if (nx == 1) sets x = !x       // bitwise not
+    Not16(in=x1 , out=notx1 );
+    Mux16(a=x1 , b=notx1 , sel=nx , out= x2);
+    // if (ny == 1) sets y = !y       // bitwise not
+    Not16(in=y1 , out=noty1 );
+    Mux16(a=y1 , b=noty1 , sel=ny , out= y2);
+
+    // compute (out = x + y) or (out = x & y)?
+    Add16(a=x2 , b=y2 , out= xaddy );
+    And16(a=x2 , b=y2 , out= xandy );
+    Mux16(a=xandy , b=xaddy , sel=f , out= preout);
+
+    // negate the out output?
+    Not16(in=preout , out= npreout );
+    Mux16(a=preout , b=npreout , sel=no , out=out, out[0..7]=low8, out[8..15]=high8, out[15]=MSB);
+
+    // if (out == 0) equals 1, else 0
+    Or8Way(in=low8 , out= w1);
+    Or8Way(in=high8, out= w2);
+    Or(a=w1 , b=w2 , out=w3 );
+    Not(in=w3 , out=zr );
+
+    // if (out < 0)  equals 1, else 0
+    Mux(a=false , b=true , sel=MSB , out=ng );
 }
